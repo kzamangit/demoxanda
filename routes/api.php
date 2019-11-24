@@ -18,4 +18,11 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 });
 
 Route::apiResource('spaceship','Api\SpaceshipController');
+Route::get('/heartbeat','Api\SpaceshipController@heartBeat');
 
+Route::fallback(function(){
+    return response()->json([
+        'message' => 'Servie Not Found.',
+        'HTTP Status Code'=>'404'
+], 404);
+});

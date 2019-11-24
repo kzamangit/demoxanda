@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Response;
 use App\Http\Resources\ResSpaceshipCollection;
@@ -18,6 +19,25 @@ class SpaceshipController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
+
+    public function heartBeat() {
+        try {      
+            $count = AccessToken::where([
+                ['id','=',"1"]
+                ])->count();
+                $response = Response::json(array(
+                    "Http Server status"=>"Running",
+                    "MySQL Databse Connection"=>'Success'               
+                ));
+        } catch(QueryException $ex){ 
+            $response = Response::json(array(
+                "Http Server status"=>"Running",
+                "MySQL Databse Connection"=>'Failed'               
+            ));
+        }
+
+        return $response;
+    }
     public function index(Request $request)
     {
         if($this->isValidUser($request)) {
@@ -51,9 +71,10 @@ class SpaceshipController extends Controller
            $spaceShip->value = $request->input('value');
            $spaceShip->status = $request->input('status');
            
+           
            $spaceShip->save();
            
-           if($spaceShip->id>0) {
+          if($spaceShip->id>0) {
                 if($request->input('armaments')!=''){
                     $count = 0;
                     foreach($request->input('armaments') as $record) {
@@ -63,7 +84,10 @@ class SpaceshipController extends Controller
                         $armament->qty = $record['qty'];
                         $armament->save();                        
                     }   
-                    $response = Response::json(array("success"=>"true"));            
+                    $response = Response::json(array(
+                        "success"=>"true",
+                        "Spaceship ID"=>$spaceShip->id
+                    ));            
                 }
                 
             }
@@ -71,7 +95,7 @@ class SpaceshipController extends Controller
                 $response = Response::json(array("success"=>"false"));
             }
 
-            //return new ResSpaceship($spanceShip);
+            //return new ResSpaceship($spaceShip);
         }
         else {
             $response = Response::json(array(

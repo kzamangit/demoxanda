@@ -14,3 +14,10 @@
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::fallback(function(){
+    return response()->json([
+        'message' => 'Not Found.',
+        'HTTP Status Code'=>'404'
+], 404);
+});
