@@ -12,14 +12,20 @@ use App\Spaceship;
 use App\Armament;
 use App\AccessToken;
 
+/***********************
+ * This controller contains all the REST endpoint related to Spaceship
+ * heatbeat: retun database connction status
+ * index: return all the spaceship list
+ * store: create spaceship
+ * show: return a speceship details
+ * update: update database record
+ * destroy: delete spaceship from database * 
+ */
 class SpaceshipController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-
+    /*************************************************
+     * Check Heatbeat and Database connetion status **
+     ************************************************/
     public function heartBeat() {
         try {      
             $count = AccessToken::where([
@@ -38,6 +44,11 @@ class SpaceshipController extends Controller
 
         return $response;
     }
+
+    /*************************************************
+     * Return all Spaceship data *********************
+     ************************************************/
+
     public function index(Request $request)
     {
         if($this->isValidUser($request)) {
@@ -53,15 +64,22 @@ class SpaceshipController extends Controller
         }       
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+    /*************************************************
+     * Create new spaceship in database table Spaceships
+     * and Armaments
+     ************************************************/
     public function store(Request $request)
     {
         if($this->isValidUser($request)) {
+
+            $validatedData = $request->validate([
+                'name' => 'required|max:255',
+                'class' => 'required',
+                'crew' => 'required',
+                'image' => 'required',
+                'value' => 'required',
+                'status' => 'required',
+            ]);
           
            $spaceShip = new Spaceship();
            $spaceShip->name = $request->input('name');
@@ -71,7 +89,7 @@ class SpaceshipController extends Controller
            $spaceShip->value = $request->input('value');
            $spaceShip->status = $request->input('status');
            
-           
+           // save data in spaceship table in database
            $spaceShip->save();
            
           if($spaceShip->id>0) {
@@ -82,6 +100,7 @@ class SpaceshipController extends Controller
                         $armament->spaceship_id = $spaceShip->id;
                         $armament->title = $record['title'];
                         $armament->qty = $record['qty'];
+                        //save data in armament table in database
                         $armament->save();                        
                     }   
                     $response = Response::json(array(
@@ -106,12 +125,11 @@ class SpaceshipController extends Controller
         return $response;
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+   
+    /*************************************************
+     * Return Spaceship Details with Armaments**
+     * Path parameter $id is Spaceship ID
+     ************************************************/
     public function show(Request $request, $id) {        
 
         if($this->isValidUser($request)) {
@@ -130,13 +148,11 @@ class SpaceshipController extends Controller
         }  
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+    /*************************************************
+     * Update Spaceship details
+     * Delete Armament records and insert newly 
+     * parameter $id is spaceship ID
+     ************************************************/
     public function update(Request $request, $id) {
 
         if($this->isValidUser($request)) {          
@@ -184,12 +200,10 @@ class SpaceshipController extends Controller
          return $response;
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+    /*************************************************
+     * Delete Record from Spaceship and Armaments
+     * Parameter $id is Spaceship ID
+     ************************************************/
     public function destroy(Request $request, $id)
     {
         if($this->isValidUser($request)) {
@@ -210,6 +224,13 @@ class SpaceshipController extends Controller
         return $response;
     }
 
+    /*************************************************
+     * Check user details is validity
+     * Read username and access_token from request header
+     * and validate in database access_token table.
+     * return true when record exist in databse for that
+     * username and access_token
+     ************************************************/
  function isValidUser(Request $request) {
         $username = $request->header('username');
         $access_token = $request->header('access_token');
@@ -223,16 +244,5 @@ class SpaceshipController extends Controller
         else {
             return false;
         }
-    }
-
-    function validateAttributes(Request $request) {
-        $data = json_decode($request->payload, true);
-        $validationRoles = [
-            'name' => 'digits:8',
-            'age' => 'digits:8'
-        ];
-
-        $validator = Validator::make($data, $validationRoles);
-        return $validator;
     }
 }
