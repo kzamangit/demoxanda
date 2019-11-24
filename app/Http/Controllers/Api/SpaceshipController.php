@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use \Illuminate\Support\Facades\Validator;
 use Response;
 use App\Http\Resources\ResSpaceshipCollection;
 use App\Http\Resources\ResSpaceship;
@@ -72,49 +73,55 @@ class SpaceshipController extends Controller
     {
         if($this->isValidUser($request)) {
 
-            $validatedData = $request->validate([
+            $validatedData = Validator::make($request->json()->all(),[
                 'name' => 'required|max:255',
                 'class' => 'required',
                 'crew' => 'required',
                 'image' => 'required',
                 'value' => 'required',
                 'status' => 'required',
-            ]);
-          
-           $spaceShip = new Spaceship();
-           $spaceShip->name = $request->input('name');
-           $spaceShip->class = $request->input('class');
-           $spaceShip->crew = $request->input('crew');
-           $spaceShip->image = $request->input('image');
-           $spaceShip->value = $request->input('value');
-           $spaceShip->status = $request->input('status');
-           
-           // save data in spaceship table in database
-           $spaceShip->save();
-           
-          if($spaceShip->id>0) {
-                if($request->input('armaments')!=''){
-                    $count = 0;
-                    foreach($request->input('armaments') as $record) {
-                        $armament = new Armament();
-                        $armament->spaceship_id = $spaceShip->id;
-                        $armament->title = $record['title'];
-                        $armament->qty = $record['qty'];
-                        //save data in armament table in database
-                        $armament->save();                        
-                    }   
-                    $response = Response::json(array(
-                        "success"=>"true",
-                        "Spaceship ID"=>$spaceShip->id
-                    ));            
-                }
+                ]);
+    
+            // check validation errors
+            if($validatedData->fails()) {                
+                foreach ($validatedData->errors()->getMessages() as $item) {
+                    $response = Response::json(array($validatedData->errors()));
+                }              
+            } 
+            else {    
+                $spaceShip = new Spaceship();
+                $spaceShip->name = $request->input('name');
+                $spaceShip->class = $request->input('class');
+                $spaceShip->crew = $request->input('crew');
+                $spaceShip->image = $request->input('image');
+                $spaceShip->value = $request->input('value');
+                $spaceShip->status = $request->input('status');
                 
-            }
-            else {
-                $response = Response::json(array("success"=>"false"));
-            }
-
-            //return new ResSpaceship($spaceShip);
+                // save data in spaceship table in database
+                $spaceShip->save();
+           
+                if($spaceShip->id>0) {
+                        if($request->input('armaments')!=''){
+                            $count = 0;
+                            foreach($request->input('armaments') as $record) {
+                                $armament = new Armament();
+                                $armament->spaceship_id = $spaceShip->id;
+                                $armament->title = $record['title'];
+                                $armament->qty = $record['qty'];
+                                //save data in armament table in database
+                                $armament->save();                        
+                            }   
+                            $response = Response::json(array(
+                                "success"=>"true",
+                                "Spaceship ID"=>$spaceShip->id
+                            ));            
+                        }
+                        
+                    }
+                    else {
+                        $response = Response::json(array("success"=>"false"));
+                    }
+                } // end validation error checking
         }
         else {
             $response = Response::json(array(
